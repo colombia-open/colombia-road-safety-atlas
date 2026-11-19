@@ -148,11 +148,14 @@ publique un release de PyPI ≥ 0.13 con este dataset, cambiar el pin a
 
 ## Desplegar en GitHub Pages
 
-Una vez el repo esté en GitHub (pasos manuales, una sola vez):
+GitHub Pages no permite servir una subcarpeta como `/site` con el método
+clásico "deploy from branch" (solo acepta `/` o `/docs`). Por eso el
+despliegue usa el modo "GitHub Actions" de Pages:
 
-1. Settings → Pages → Source: "Deploy from a branch".
-2. Branch: `main`, carpeta: `/site`.
-3. Guardar — sin Actions, sin API keys, sin costo.
+1. Una sola vez: Settings → Pages → Source: "GitHub Actions" (o activarlo
+   vía `gh api` con `build_type=workflow`).
+2. `.github/workflows/pages.yml` publica `site/` en cada push a `main`
+   que lo toque, sin API keys ni costo.
 
 ## Licencias de los datos
 
