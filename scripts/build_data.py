@@ -61,6 +61,13 @@ def display_url(raw_url: str) -> str:
     return raw_url[: -len(".json")] if raw_url.endswith(".json") else raw_url
 
 
+def es_co_int(n: int) -> str:
+    """Formato es-CO de un entero (punto como separador de miles) para
+    texto generado en Python -- Python no tiene un formato "es-CO" nativo
+    y f"{n:,}" usa coma, que en español se lee como decimal."""
+    return f"{n:,}".replace(",", ".")
+
+
 def compute_breaks(values: list[float], n_classes: int) -> list[float]:
     s = pl.Series("tasa", values).drop_nulls().sort()
     if s.len() == 0:
@@ -198,6 +205,7 @@ MESES = [
 def build_story(
     homicidios: pl.DataFrame,
     municipios: pl.DataFrame,
+    grid: pl.DataFrame,
     anios_disponibles: list[int],
 ) -> dict[str, Any]:
     """Cifras para el storytelling (hero, patrones temporales, ranking de
@@ -215,6 +223,20 @@ def build_story(
             nacional_por_anio["anio"].to_list(),
             nacional_por_anio["total"].to_list(),
         )
+    )
+
+    # Tasa nacional = suma de muertes / suma de poblacion * 100_000, por
+    # anio (nunca el total absoluto solo: regla editorial del proyecto).
+    # Se calcula sobre `grid` (mismo grano que tasas_por_anio.json) para
+    # que sea consistente con la tasa por municipio.
+    tasa_nacional = (
+        grid.group_by("anio")
+        .agg(pl.col("homicidios").sum().alias("hom"), pl.col("poblacion").sum().alias("pob"))
+        .sort("anio")
+        .with_columns((pl.col("hom") / pl.col("pob") * 100_000).round(4).alias("tasa"))
+    )
+    tasa_nacional_por_anio = dict(
+        zip(tasa_nacional["anio"].to_list(), tasa_nacional["tasa"].to_list())
     )
 
     con_dow = homicidios.with_columns(pl.col("fecha").dt.weekday().alias("dow"))
@@ -252,6 +274,7 @@ def build_story(
 
     return {
         "total_nacional_por_anio": total_nacional_por_anio,
+        "tasa_nacional_por_anio": tasa_nacional_por_anio,
         "anio_rango_patron_temporal": [
             int(homicidios["anio"].min()),
             int(homicidios["anio"].max()),
@@ -323,7 +346,7 @@ def main() -> None:
     year_props_by_mpio = build_year_properties(grid)
     tasas_por_anio = build_tasas_por_anio(base_municipios, year_props_by_mpio)
     geometria_topo = build_geometry_topojson(base_municipios)
-    story = build_story(homicidios, municipios, anios_disponibles)
+    story = build_story(homicidios, municipios, grid, anios_disponibles)
 
     cobertura_join = {
         "municipios_sin_geometria": sorted(municipios_sin_geometria),
@@ -359,18 +382,28 @@ def main() -> None:
             ],
         ),
         "nota_metodologica": (
-            "Tasa = (homicidios en siniestros de transito / poblacion) * "
-            "100 000, por municipio y anio. Poblacion = proyecciones DANE, "
+            "Este atlas llama 'muertes en siniestros viales' a lo que la fuente "
+            "(MinDefensa/Policia Nacional) clasifica como 'homicidio en accidente "
+            "de transito' -- es la categoria legal del dato, no un indicio de que "
+            "haya intencionalidad: se usa un termino mas claro para el publico "
+            "general. Tasa = (muertes en siniestros viales / poblacion) * 100 000, "
+            "por municipio y anio. Poblacion = proyecciones DANE, "
             "area_geografica='Total'. Un municipio-anio sin dato de "
             "poblacion se excluye (nunca se infiere una tasa sin "
             "poblacion real). El anio en curso se excluye por estar "
             "incompleto. breaks_tasa son 4 cortes de quantiles (5 clases) "
             "calculados sobre toda la serie, no por anio individual, para "
             "que la escala de color sea comparable entre anios. Municipios "
-            f"con poblacion < {POBLACION_PEQUENA_UMBRAL:,} hab. llevan "
+            f"con poblacion < {es_co_int(POBLACION_PEQUENA_UMBRAL)} hab. llevan "
             "poblacion_pequena=true: su tasa de un solo anio es inestable "
             "(ver tasa_prom3, promedio movil de 3 anios) y no deben "
-            "rankearse con la tasa de un solo anio."
+            "rankearse con la tasa de un solo anio. Limitacion importante del "
+            "denominador: una muerte se registra en el municipio donde ocurre "
+            "el siniestro, no donde vive la victima. Un municipio atravesado "
+            "por una via nacional de alto trafico puede acumular muertes de "
+            "personas que solo estaban de paso, lo que infla su tasa sin que "
+            "eso refleje el riesgo real de quienes viven ahi -- no hay en estos "
+            "datos una capa de red vial que permita distinguir un caso del otro."
         ),
     }
 

@@ -106,7 +106,7 @@ function initExplorerMap(ui, { geojson, porMunicipio, meta, sources }) {
     }
     const ranking = rankingDe(porMunicipio, geojson, cod_mpio, anioActual);
     const aviso = datos.poblacion_pequena
-      ? `<p class="card-aviso">Población pequeña — tasa inestable. Promedio de 3 años: ${datos.tasa_prom3}.</p>`
+      ? `<p class="card-aviso">Población pequeña — tasa inestable. Promedio de 3 años: ${fmtTasa(datos.tasa_prom3)}.</p>`
       : "";
     const spark = sparklineSvg(porMunicipio, cod_mpio, anios, anioActual, 180, 40);
     const srcHom = sources.delincuencia_homicidios_transito;
@@ -114,13 +114,13 @@ function initExplorerMap(ui, { geojson, porMunicipio, meta, sources }) {
       <button type="button" class="card-close" aria-label="Cerrar ficha">×</button>
       <p class="card-dpto">${props.nombre_dpto}</p>
       <h3 class="card-nombre">${props.nombre_mpio}</h3>
-      <p class="card-tasa">${datos.tasa}<span class="card-tasa-unit">por 100.000 hab. · ${anioActual}</span></p>
+      <p class="card-tasa">${fmtTasa(datos.tasa)}<span class="card-tasa-unit">por 100.000 hab. · ${anioActual}</span></p>
       ${aviso}
       <dl class="card-dl">
-        <dt>Homicidios</dt><dd>${fmtEs(datos.homicidios)}</dd>
-        <dt>Población</dt><dd>${fmtEs(datos.poblacion)}</dd>
-        <dt>Puesto nacional</dt><dd>${ranking.puestoNacional} de ${ranking.totalNacional}</dd>
-        <dt>Puesto en ${props.nombre_dpto}</dt><dd>${ranking.puestoDepto} de ${ranking.totalDepto}</dd>
+        <dt>Muertes</dt><dd>${fmtConteo(datos.homicidios)}</dd>
+        <dt>Población</dt><dd>${fmtConteo(datos.poblacion)}</dd>
+        <dt>Puesto nacional</dt><dd>${fmtConteo(ranking.puestoNacional)} de ${fmtConteo(ranking.totalNacional)}</dd>
+        <dt>Puesto en ${props.nombre_dpto}</dt><dd>${fmtConteo(ranking.puestoDepto)} de ${fmtConteo(ranking.totalDepto)}</dd>
       </dl>
       <div class="card-spark">${spark}</div>
       <a class="card-fuente" href="${srcHom.source_url}" target="_blank" rel="noopener">Fuente: ${srcHom.source_name}</a>
@@ -187,20 +187,4 @@ function initExplorerMap(ui, { geojson, porMunicipio, meta, sources }) {
   });
 
   return { map, setYear, seleccionar };
-}
-
-function renderLegendMapa(container, breaks) {
-  const labels = [];
-  for (let i = 0; i < MAP_COLOR_SCALE.length; i++) {
-    if (i === 0) labels.push(`≤ ${breaks[0]}`);
-    else if (i < MAP_COLOR_SCALE.length - 1) labels.push(`${breaks[i - 1]} – ${breaks[i]}`);
-    else labels.push(`> ${breaks[i - 1]}`);
-  }
-  const items = MAP_COLOR_SCALE.map(
-    (c, i) => `<span class="legend-item"><span class="legend-swatch" style="background:${c}"></span>${labels[i]}</span>`
-  );
-  items.push(
-    `<span class="legend-item"><span class="legend-swatch legend-swatch-hatch"></span>Sin dato</span>`
-  );
-  container.innerHTML = items.join("");
 }

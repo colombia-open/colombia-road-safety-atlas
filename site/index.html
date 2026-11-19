@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Atlas de siniestralidad vial de Colombia</title>
-  <meta name="description" content="Tasa de homicidios en accidentes de tránsito por municipio y año en Colombia, por cada 100.000 habitantes." />
+  <meta name="description" content="Tasa de muertes en siniestros viales por municipio y año en Colombia, por cada 100.000 habitantes." />
   <meta property="og:title" content="Atlas de siniestralidad vial de Colombia" />
-  <meta property="og:description" content="Dónde se concentra el riesgo en las vías de Colombia — municipio por municipio, año por año." />
+  <meta property="og:description" content="Dónde ocurren las muertes en las vías de Colombia — municipio por municipio, año por año." />
   <meta property="og:image" content="assets/img/og-image.jpg" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png" />
@@ -40,14 +40,16 @@
   <!-- 2-4. SCROLLYTELLING: ABSOLUTOS → EL GIRO → LOS EXTREMOS -->
   <section class="scrolly" id="escena-mapa" data-scrolly>
     <div class="scrolly-sticky">
-      <div id="scrolly-map" aria-label="Mapa de Colombia: homicidios en siniestros de tránsito"></div>
+      <div id="scrolly-map" aria-label="Mapa de Colombia: muertes en siniestros viales">
+        <div id="scrolly-legend" class="scrolly-legend" aria-hidden="true"></div>
+      </div>
       <div class="scrolly-progress"><div class="scrolly-progress-fill"></div></div>
     </div>
     <div class="scrolly-steps">
       <div class="step" data-step="0">
         <p class="section-kicker">Las ciudades, en números absolutos</p>
         <h2>El panorama parece claro</h2>
-        <p>Bogotá, Medellín y Cali concentran las cifras más altas de homicidios en siniestros de tránsito del país. Entre más grande el círculo, más muertes en números absolutos.</p>
+        <p>Bogotá, Medellín y Cali concentran las cifras más altas de muertes en siniestros viales del país. Entre más grande el círculo, más muertes en números absolutos.</p>
         <picture class="content-photo" data-slot="escena-ciudad" data-credit="ia">
           <source type="image/webp" srcset="assets/img/escena-ciudad-640.webp 640w, assets/img/escena-ciudad-1280.webp 1280w" sizes="(min-width: 760px) 40vw, 90vw">
           <img src="assets/img/escena-ciudad-1280.jpg" srcset="assets/img/escena-ciudad-640.jpg 640w, assets/img/escena-ciudad-1280.jpg 1280w" sizes="(min-width: 760px) 40vw, 90vw" width="1280" height="960" loading="lazy" alt="Tráfico en una avenida de una ciudad colombiana de noche">
@@ -56,14 +58,15 @@
       <div class="step" data-step="1">
         <p class="section-kicker">El giro</p>
         <h2>Pero divide por población…</h2>
-        <p>Y el panorama cambia por completo. El mismo mapa, ahora por tasa de homicidios por 100.000 habitantes: Bogotá cae a la mitad de la tabla nacional. El riesgo real está en otro lugar.</p>
+        <p>Y el panorama cambia por completo. El mismo mapa, ahora por tasa de muertes viales por 100.000 habitantes: Bogotá cae a la mitad de la tabla nacional. Pero la tasa mide <strong>dónde ocurren las muertes</strong>, no necesariamente el riesgo de quienes viven ahí — ver la nota sobre el denominador en "Qué significa esto" y en la metodología.</p>
       </div>
       <div class="step" data-step="2">
         <p class="section-kicker">Los extremos</p>
-        <h2>Pueblos pequeños, tasas enormes</h2>
+        <h2 id="extremos-title">Calculando…</h2>
         <p id="extremos-text">Calculando…</p>
-        <ol class="topn-list" id="topn-list" aria-label="Municipios con la tasa más alta"></ol>
-        <p class="step-caveat">¿Qué tienen en común estos municipios? No tenemos una capa de red vial en los datos para confirmarlo — queda como pregunta abierta.</p>
+        <p class="step-note" id="extremos-umbral-note">Calculando…</p>
+        <ol class="topn-list" id="topn-list" aria-label="Municipios con la tasa más alta (excluyendo población pequeña)"></ol>
+        <p class="step-caveat">Hipótesis, no confirmada: estos municipios podrían estar atravesados por corredores viales nacionales de alto tráfico, que concentran muertes de personas de paso — no de sus propios habitantes. No tenemos una capa de red vial en los datos para comprobarlo.</p>
         <picture class="content-photo" data-slot="escena-pueblo" data-credit="ia">
           <source type="image/webp" srcset="assets/img/escena-pueblo-640.webp 640w, assets/img/escena-pueblo-1280.webp 1280w" sizes="(min-width: 760px) 40vw, 90vw">
           <img src="assets/img/escena-pueblo-1280.jpg" srcset="assets/img/escena-pueblo-640.jpg 640w, assets/img/escena-pueblo-1280.jpg 1280w" sizes="(min-width: 760px) 40vw, 90vw" width="1280" height="960" loading="lazy" alt="Carretera nacional atravesando un municipio pequeño de Colombia">
@@ -81,14 +84,14 @@
         <div class="compare-card">
           <p class="compare-label">Más muertes en números absolutos</p>
           <p class="compare-city" id="geo-abs-city">—</p>
-          <p class="compare-value"><span id="geo-abs-value">—</span> homicidios</p>
+          <p class="compare-value"><span id="geo-abs-value">—</span> muertes</p>
           <p class="compare-footnote">tasa: <span id="geo-abs-tasa">—</span> por 100.000 hab.</p>
         </div>
         <div class="compare-card">
           <p class="compare-label">Tasa más alta entre ciudades grandes (&gt;500.000 hab.)</p>
           <p class="compare-city" id="geo-tasa-city">—</p>
           <p class="compare-value"><span id="geo-tasa-value">—</span> por 100.000 hab.</p>
-          <p class="compare-footnote"><span id="geo-tasa-abs">—</span> homicidios en total</p>
+          <p class="compare-footnote"><span id="geo-tasa-abs">—</span> muertes en total</p>
         </div>
       </div>
       <p class="section-text" id="geo-depto-text"></p>
@@ -99,7 +102,7 @@
   <section class="chapter-break">
     <div class="img-slot img-slot-bg" data-slot="capitulo-corredor" data-credit="ia"></div>
     <div class="chapter-break-content">
-      <span class="km-badge">KM 05 — EL TIEMPO</span>
+      <span class="km-badge">KM 01 — EL TIEMPO</span>
       <p class="chapter-break-text">¿Mejora o empeora año tras año?</p>
     </div>
   </section>
@@ -108,9 +111,19 @@
   <section class="story-section alt" id="tiempo">
     <div class="reveal">
       <p class="section-kicker">El tiempo</p>
-      <h2>La cifra no para de subir</h2>
+      <h2 id="trend-title">Calculando…</h2>
       <div id="trend-chart"></div>
       <p class="section-text" id="trend-text"></p>
+    </div>
+  </section>
+
+  <!-- CUÁNDO -->
+  <section class="story-section" id="cuando">
+    <div class="reveal">
+      <p class="section-kicker">Cuándo</p>
+      <h2>No todos los días son iguales</h2>
+      <div id="dow-chart"></div>
+      <p class="section-text" id="dow-text"></p>
     </div>
   </section>
 
@@ -118,7 +131,7 @@
   <section class="chapter-break">
     <div class="img-slot img-slot-bg" data-slot="capitulo-memoria" data-credit="ia"></div>
     <div class="chapter-break-content">
-      <span class="km-badge">KM 06 — EXPLÓRALO TÚ MISMO</span>
+      <span class="km-badge">KM 02 — EXPLÓRALO TÚ MISMO</span>
       <p class="chapter-break-text">Busca tu municipio.</p>
     </div>
   </section>
@@ -150,6 +163,15 @@
     </div>
   </section>
 
+  <!-- CIERRE -->
+  <section class="story-section" id="cierre">
+    <div class="reveal">
+      <p class="section-kicker">Qué significa esto</p>
+      <h2>Cuatro cosas antes de que explores el mapa</h2>
+      <p class="cierre-box" id="cierre-text">Calculando…</p>
+    </div>
+  </section>
+
   <!-- METODOLOGÍA -->
   <footer class="app-footer">
     <div class="img-slot img-slot-bg img-slot-subtle" data-slot="textura-asfalto"></div>
@@ -159,6 +181,7 @@
     </details>
   </footer>
 
+  <script src="js/format.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/scrolly.js"></script>
   <script src="js/map-common.js"></script>

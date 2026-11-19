@@ -97,17 +97,26 @@ function loadMapData() {
   return _mapDataPromise;
 }
 
-// Rampa secuencial validada (dataviz skill, --ordinal, un solo hue).
-const MAP_COLOR_SCALE = ["#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
+// Rampa secuencial azul oscuro → casi blanco (un solo hue, ver
+// editorial-art-direction/choropleth-atlas skills). La tasa más alta
+// es la más luminosa a propósito: sobre el fondo nocturno (#15181c),
+// la clase anterior (#0d366b) se fundía con el fondo y el mayor riesgo
+// quedaba invisible. Contraste WCAG vs #15181c verificado: 1.16 / 1.69
+// / 2.88 / 6.08 / 15.02 — monótono creciente, la clase alta resalta.
+const MAP_COLOR_SCALE = ["#122540", "#1d3f6e", "#2f62a3", "#5c9bdb", "#dceeff"];
 const SIN_DATO_COLOR = "#4a5058";
 
 function fillColorExpression(breaks) {
   // ['case', sin-dato -> gris, ['step', tasa, color0, b0, color1, b1, ...]]
+  // La condición usa "!= true" (no "== false"): si feature-state aún no
+  // se ha aplicado para una feature (tieneDatos es null, no false), debe
+  // caer igual en "sin dato" en vez de colar un `tasa` null al `step`
+  // numérico (producía un warning de consola por cada feature así).
   const stepExpr = ["step", ["feature-state", "tasa"], MAP_COLOR_SCALE[0]];
   for (let i = 0; i < breaks.length; i++) {
     stepExpr.push(breaks[i], MAP_COLOR_SCALE[i + 1]);
   }
-  return ["case", ["==", ["feature-state", "tieneDatos"], false], SIN_DATO_COLOR, stepExpr];
+  return ["case", ["!=", ["feature-state", "tieneDatos"], true], SIN_DATO_COLOR, stepExpr];
 }
 
 function applyYearFeatureState(map, sourceId, porMunicipio, anio) {
@@ -182,4 +191,24 @@ function sparklineSvg(porMunicipio, cod_mpio, anios, anioActivo, width, height) 
     <path d="${path}" fill="none" stroke="var(--data-1)" stroke-width="2" />
     ${dot}
   </svg>`;
+}
+
+// Leyenda compartida entre el mapa narrativo (compacta, sobre el mapa)
+// y el explorador (barra horizontal) — mismo contrato de breaks que
+// fillColorExpression. "≤ 0" se muestra como "0 muertes" (regla #1:
+// nunca una cifra sin su unidad).
+function renderLegendMapa(container, breaks) {
+  const labels = [];
+  for (let i = 0; i < MAP_COLOR_SCALE.length; i++) {
+    if (i === 0) labels.push(breaks[0] === 0 ? "0 muertes" : `≤ ${fmtBreak(breaks[0])}`);
+    else if (i < MAP_COLOR_SCALE.length - 1) labels.push(`${fmtBreak(breaks[i - 1])} – ${fmtBreak(breaks[i])}`);
+    else labels.push(`> ${fmtBreak(breaks[i - 1])}`);
+  }
+  const items = MAP_COLOR_SCALE.map(
+    (c, i) => `<span class="legend-item"><span class="legend-swatch" style="background:${c}"></span>${labels[i]}</span>`
+  );
+  items.push(
+    `<span class="legend-item"><span class="legend-swatch legend-swatch-hatch"></span>Sin dato</span>`
+  );
+  container.innerHTML = items.join("");
 }
