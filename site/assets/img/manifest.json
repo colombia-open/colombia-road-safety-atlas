@@ -1,0 +1,29 @@
+{
+  "capitulo-corredor": [
+    1280,
+    640
+  ],
+  "capitulo-memoria": [
+    1280,
+    640
+  ],
+  "escena-ciudad": [
+    1280,
+    640
+  ],
+  "escena-pueblo": [
+    1280,
+    640
+  ],
+  "hero-mobile": [
+    640
+  ],
+  "hero": [
+    1280,
+    640
+  ],
+  "textura-asfalto": [
+    1280,
+    640
+  ]
+}

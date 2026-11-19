@@ -13,6 +13,7 @@ Uso:
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from PIL import Image
@@ -33,8 +34,9 @@ except ImportError:
     AVIF_AVAILABLE = False
 
 
-def variants_for(path: Path) -> None:
+def variants_for(path: Path) -> list[int]:
     slot = path.stem
+    generated_widths: list[int] = []
     with Image.open(path) as img:
         img = img.convert("RGB")
         original_width = img.width
@@ -51,7 +53,9 @@ def variants_for(path: Path) -> None:
             resized.save(OUT_DIR / f"{slot}-{width}.webp", "WEBP", quality=WEBP_QUALITY)
             if AVIF_AVAILABLE:
                 resized.save(OUT_DIR / f"{slot}-{width}.avif", "AVIF", quality=AVIF_QUALITY)
+            generated_widths.append(width)
     print(f"{slot}: generado hasta {min(original_width, max(WIDTHS))}px de ancho")
+    return generated_widths
 
 
 def main() -> None:
@@ -75,8 +79,20 @@ def main() -> None:
             "(`pip install pillow-avif-plugin` para AVIF también)."
         )
 
+    # Manifest de anchos realmente generados por slot (nunca se amplía
+    # más allá del original): app.js lo usa para pedir directamente un
+    # ancho que existe, en vez de probar 2560/1920/1280/640 de mayor a
+    # menor y producir 404 reales en los slots con original < 1920px.
+    manifest: dict[str, list[int]] = {}
     for path in originales:
-        variants_for(path)
+        widths = variants_for(path)
+        if widths:
+            manifest[path.stem] = sorted(widths, reverse=True)
+
+    (OUT_DIR / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"manifest.json: {len(manifest)} slot(s)")
 
 
 if __name__ == "__main__":

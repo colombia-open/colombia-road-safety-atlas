@@ -16,11 +16,22 @@ function initContentPhotos() {
   });
 }
 
-const IMG_SLOT_WIDTHS = [2560, 1920, 1280, 640];
+let _imgManifestPromise = null;
 
-// Prueba cada ancho generado, del más grande al más chico (un original
-// más chico que 2560 simplemente no tiene esa variante — optimize_images.py
-// nunca amplía — así que probar una sola ruta fija era frágil).
+// Manifest generado por optimize_images.py con los anchos realmente
+// producidos por slot (nunca amplía más allá del original). Antes se
+// probaban anchos fijos (2560/1920/1280/640) de mayor a menor hasta que
+// uno cargara, lo que disparaba ~11 errores 404 reales por visita en
+// los slots cuyo original es menor a 1920px. Con el manifest, cada slot
+// pide directamente un ancho que sabemos que existe.
+function loadImgManifest() {
+  if (_imgManifestPromise) return _imgManifestPromise;
+  _imgManifestPromise = fetch("assets/img/manifest.json")
+    .then((r) => (r.ok ? r.json() : {}))
+    .catch(() => ({}));
+  return _imgManifestPromise;
+}
+
 function probeImageSlot(slot, widths) {
   if (widths.length === 0) {
     slot.classList.add("img-slot-missing");
@@ -47,8 +58,12 @@ function addAiCredit(slot) {
   slot.appendChild(credit);
 }
 
-function initImageSlots() {
-  document.querySelectorAll(".img-slot").forEach((slot) => probeImageSlot(slot, IMG_SLOT_WIDTHS));
+async function initImageSlots() {
+  const manifest = await loadImgManifest();
+  document.querySelectorAll(".img-slot").forEach((slot) => {
+    const widths = (manifest[slot.dataset.slot] || []).slice().sort((a, b) => b - a);
+    probeImageSlot(slot, widths);
+  });
 }
 
 function renderFooter(meta) {
@@ -66,12 +81,12 @@ function renderFooter(meta) {
   const cob = meta.cobertura_join;
   document.getElementById("footer-content").innerHTML = `
     <p>${meta.nota_metodologica}</p>
-    <p>Años disponibles: ${meta.anio_min}–${meta.anio_max}. ${meta.total_municipios} municipios.
+    <p>Años disponibles: ${meta.anio_min}–${meta.anio_max}. ${fmtConteo(meta.total_municipios)} municipios.
        Datos generados ${new Date(meta.fecha_generacion_utc).toLocaleDateString("es-CO")}
        vía colombia-open v${meta.colombia_open_version}.</p>
-    <p class="cobertura-join">Cobertura del cruce de datos: ${cob.geometrias_sin_municipio.length}
-       geometría(s) sin municipio oficial, ${cob.municipios_sin_geometria.length}
-       municipio(s) sin geometría publicada, ${cob.municipio_anio_sin_poblacion}
+    <p class="cobertura-join">Cobertura del cruce de datos: ${fmtConteo(cob.geometrias_sin_municipio.length)}
+       geometría(s) sin municipio oficial, ${fmtConteo(cob.municipios_sin_geometria.length)}
+       municipio(s) sin geometría publicada, ${fmtConteo(cob.municipio_anio_sin_poblacion)}
        pares municipio-año sin población (excluidos).</p>
     ${items}
     <p>Mapa hecho con <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a>.</p>
@@ -99,12 +114,21 @@ function initMapFeatures(meta, story) {
         porMunicipio,
         anioFoco,
         breaks: meta.breaks_tasa,
+        legendEl: document.getElementById("scrolly-legend"),
       });
 
       renderTopNList(document.getElementById("topn-list"), scrolly.topN, anioFoco);
+      document.getElementById("extremos-title").textContent =
+        `${scrolly.topN[0].nombre_mpio} tiene la tasa más alta entre municipios de ` +
+        `${fmtConteo(meta.poblacion_pequena_umbral)}+ habitantes`;
       document.getElementById("extremos-text").textContent =
-        `${scrolly.topN[0].nombre_mpio}, ${scrolly.topN[0].nombre_dpto}: ${scrolly.topN[0].tasa} ` +
-        `muertes por 100.000 hab. en ${anioFoco} — la tasa más alta del país. Son pueblos pequeños, lejos de los titulares.`;
+        `${scrolly.topN[0].nombre_mpio}, ${scrolly.topN[0].nombre_dpto}: ${fmtTasa(scrolly.topN[0].tasa)} muertes por 100.000 hab. ` +
+        `(promedio de los últimos 3 años) — la tasa más alta del país entre municipios que no son pequeños. Son pueblos, lejos de los titulares.`;
+      document.getElementById("extremos-umbral-note").textContent =
+        `Se excluyen municipios con menos de ${fmtConteo(meta.poblacion_pequena_umbral)} hab.: con tan pocos casos, la tasa ` +
+        `de un solo año puede duplicarse o caer a la mitad de un año a otro — no es comparable. Por eso este ranking usa el ` +
+        `promedio de los últimos 3 años (tasa_prom3) en vez de la tasa de un solo año. En el explorador siguen apareciendo, ` +
+        `con su propio aviso de tasa inestable.`;
 
       initScrolly(document.querySelector("[data-scrolly]"), (step) => scrolly.goToStep(step));
 
@@ -162,17 +186,19 @@ function initMapTrigger(meta, story) {
 }
 
 (async function main() {
-  initImageSlots();
   initContentPhotos();
   initRevealObserver();
 
   const [meta, story] = await Promise.all([
     fetch("data/meta.json").then((r) => r.json()),
     fetch("data/story.json").then((r) => r.json()),
+    initImageSlots(),
   ]);
 
   renderHero(story);
   renderTrend(story);
+  renderDow(story);
+  renderCierre(meta, story);
   renderFooter(meta);
 
   initMapTrigger(meta, story);
