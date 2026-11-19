@@ -1,0 +1,69 @@
+{
+  "total_nacional_por_anio": {
+    "2018": 6017,
+    "2019": 6053,
+    "2020": 5068,
+    "2021": 6998,
+    "2022": 7532,
+    "2023": 7584,
+    "2024": 7126,
+    "2025": 7563
+  },
+  "anio_rango_patron_temporal": [
+    2003,
+    2026
+  ],
+  "dow_pct": {
+    "lunes": 14.12,
+    "martes": 11.55,
+    "miercoles": 11.11,
+    "jueves": 11.61,
+    "viernes": 12.83,
+    "sabado": 17.52,
+    "domingo": 21.26
+  },
+  "mes_pct": {
+    "enero": 8.61,
+    "febrero": 7.66,
+    "marzo": 8.47,
+    "abril": 7.96,
+    "mayo": 8.17,
+    "junio": 8.45,
+    "julio": 8.62,
+    "agosto": 8.51,
+    "septiembre": 8.45,
+    "octubre": 8.22,
+    "noviembre": 7.9,
+    "diciembre": 8.99
+  },
+  "top_departamentos_ultimo_anio": {
+    "anio": 2025,
+    "departamentos": [
+      {
+        "cod_dpto": "05",
+        "nombre_dpto": "Antioquia",
+        "total": 1226
+      },
+      {
+        "cod_dpto": "76",
+        "nombre_dpto": "Valle del Cauca",
+        "total": 676
+      },
+      {
+        "cod_dpto": "11",
+        "nombre_dpto": "Bogota D.C.",
+        "total": 609
+      },
+      {
+        "cod_dpto": "25",
+        "nombre_dpto": "Cundinamarca",
+        "total": 530
+      },
+      {
+        "cod_dpto": "68",
+        "nombre_dpto": "Santander",
+        "total": 405
+      }
+    ]
+  }
+}

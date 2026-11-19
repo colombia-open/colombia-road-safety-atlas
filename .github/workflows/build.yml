@@ -1,0 +1,41 @@
+name: Actualizar datos del atlas
+
+on:
+  schedule:
+    - cron: "0 6 1 * *" # 1ro de cada mes, 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -r scripts/requirements.txt
+
+      - name: Generar site/data/ contra el último bundle de colombia-open
+        run: python scripts/build_data.py
+
+      - name: Abrir PR si los datos cambiaron
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "data: actualizar tasas de siniestralidad vial"
+          title: "Actualización mensual de datos (colombia-open)"
+          body: |
+            Regenerado automáticamente por el cron mensual contra el último
+            bundle publicado de `colombia-open` (GitHub Releases).
+
+            Revisar `site/data/meta.json` para el rango de años y la fecha
+            de corte antes de aprobar.
+          branch: auto/actualizar-datos
+          add-paths: site/data/
+          delete-branch: true

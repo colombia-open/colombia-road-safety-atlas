@@ -1,0 +1,65 @@
+{
+  "anio_min": 2018,
+  "anio_max": 2025,
+  "anios_disponibles": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "breaks_tasa": [
+    0.0,
+    6.1252,
+    14.1511,
+    26.4969
+  ],
+  "n_clases": 5,
+  "poblacion_pequena_umbral": 20000,
+  "total_municipios": 1121,
+  "cobertura_join": {
+    "municipios_sin_geometria": [
+      "27493"
+    ],
+    "geometrias_sin_municipio": [
+      "00000"
+    ],
+    "municipio_anio_sin_poblacion": 0
+  },
+  "colombia_open_version": "0.15.0",
+  "fecha_generacion_utc": "2026-11-18T23:37:05.344647+00:00",
+  "sources": [
+    {
+      "dataset": "delincuencia_homicidios_transito",
+      "source_name": "MinDefensa / Policía Nacional — Homicidio en accidente de tránsito (vía datos.gov.co)",
+      "source_url": "https://www.datos.gov.co/resource/uav5-b85g",
+      "license": "CC BY-SA 4.0",
+      "attribution_required": true
+    },
+    {
+      "dataset": "demografia",
+      "source_name": "DANE — Proyecciones de población municipal por área geográfica 2018-2042",
+      "source_url": "https://www.dane.gov.co/files/censo2018/proyecciones-de-poblacion/Municipal/PPED-AreaMun-2018-2042_VP.xlsx",
+      "license": "Sin licencia abierta explícita — términos de uso del DANE",
+      "attribution_required": true
+    },
+    {
+      "dataset": "municipios_geometria",
+      "source_name": "IGAC (Instituto Geográfico Agustín Codazzi), vía Superintendencia de Notariado y Registro (SNR) — servicio ArcGIS REST 'MunicipiosSNR'",
+      "source_url": "https://services2.arcgis.com/RVvWzU3lgJISqdke/arcgis/rest/services/MunicipiosSNR/FeatureServer/0",
+      "license": "CC BY 4.0",
+      "attribution_required": true
+    },
+    {
+      "dataset": "municipios",
+      "source_name": "DANE — DIVIPOLA Códigos municipios (vía datos.gov.co)",
+      "source_url": "https://www.datos.gov.co/resource/gdxc-w37w",
+      "license": "CC BY-SA 4.0",
+      "attribution_required": true
+    }
+  ],
+  "nota_metodologica": "Tasa = (homicidios en siniestros de transito / poblacion) * 100 000, por municipio y anio. Poblacion = proyecciones DANE, area_geografica='Total'. Un municipio-anio sin dato de poblacion se excluye (nunca se infiere una tasa sin poblacion real). El anio en curso se excluye por estar incompleto. breaks_tasa son 4 cortes de quantiles (5 clases) calculados sobre toda la serie, no por anio individual, para que la escala de color sea comparable entre anios. Municipios con poblacion < 20,000 hab. llevan poblacion_pequena=true: su tasa de un solo anio es inestable (ver tasa_prom3, promedio movil de 3 anios) y no deben rankearse con la tasa de un solo anio."
+}

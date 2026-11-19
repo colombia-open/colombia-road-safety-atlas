@@ -1,0 +1,14 @@
+# colombia-open en PyPI (0.12.0) todavía no incluye el dataset
+# delincuencia_homicidios_transito (agregado después de ese release).
+# Se instala desde el commit exacto de GitHub que ya lo declara en
+# colombia_open.datasets.Dataset. El bundle de datos en sí ya está
+# publicado (GitHub Release v0.14.0) y se descarga vía la API pública
+# ColombiaOpen() normalmente — esto solo pinea el código del paquete.
+# TODO: cuando colombia-open publique un release de PyPI >= 0.13 con este
+# dataset, cambiar a `colombia-open>=0.13`.
+colombia-open @ git+https://github.com/davidcasr/colombia-open.git@c743ffa06fa731324e3f3031badf0107ef82fa3b
+polars>=1.0,<2.0
+shapely>=2.0,<3.0
+topojson>=1.5
+Pillow>=10.0
+# pillow-avif-plugin  # opcional: habilita las variantes AVIF en optimize_images.py

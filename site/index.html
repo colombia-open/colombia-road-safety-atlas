@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Atlas de siniestralidad vial de Colombia</title>
+  <meta name="description" content="Tasa de homicidios en accidentes de tránsito por municipio y año en Colombia, por cada 100.000 habitantes." />
+  <meta property="og:title" content="Atlas de siniestralidad vial de Colombia" />
+  <meta property="og:description" content="Dónde se concentra el riesgo en las vías de Colombia — municipio por municipio, año por año." />
+  <meta property="og:image" content="assets/img/og-image.jpg" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- 1. HERO -->
+  <section class="hero">
+    <div class="img-slot img-slot-bg hero-bg-desktop" data-slot="hero" data-credit="ia"></div>
+    <div class="img-slot img-slot-bg hero-bg-mobile" data-slot="hero-mobile" data-credit="ia"></div>
+    <div class="hero-content">
+      <p class="eyebrow">Un atlas de datos abiertos</p>
+      <p class="hero-figure"><span id="hero-minutos">—</span><span class="hero-unit">min</span></p>
+      <p class="hero-line">muere alguien en las vías de Colombia</p>
+      <p class="hero-sub" id="hero-sub">Cargando datos…</p>
+      <a href="#escena-mapa" class="scroll-cue" aria-label="Desplazarse a la siguiente sección">
+        Desliza para ver los datos <span aria-hidden="true">↓</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Dispara la carga diferida de MapLibre + los datos del mapa cuando
+       el visitante se acerca, no al cargar la página. -->
+  <div id="map-sentinel"></div>
+
+  <!-- 2-4. SCROLLYTELLING: ABSOLUTOS → EL GIRO → LOS EXTREMOS -->
+  <section class="scrolly" id="escena-mapa" data-scrolly>
+    <div class="scrolly-sticky">
+      <div id="scrolly-map" aria-label="Mapa de Colombia: homicidios en siniestros de tránsito"></div>
+      <div class="scrolly-progress"><div class="scrolly-progress-fill"></div></div>
+    </div>
+    <div class="scrolly-steps">
+      <div class="step" data-step="0">
+        <p class="section-kicker">Las ciudades, en números absolutos</p>
+        <h2>El panorama parece claro</h2>
+        <p>Bogotá, Medellín y Cali concentran las cifras más altas de homicidios en siniestros de tránsito del país. Entre más grande el círculo, más muertes en números absolutos.</p>
+        <picture class="content-photo" data-slot="escena-ciudad" data-credit="ia">
+          <source type="image/webp" srcset="assets/img/escena-ciudad-640.webp 640w, assets/img/escena-ciudad-1280.webp 1280w" sizes="(min-width: 760px) 40vw, 90vw">
+          <img src="assets/img/escena-ciudad-1280.jpg" srcset="assets/img/escena-ciudad-640.jpg 640w, assets/img/escena-ciudad-1280.jpg 1280w" sizes="(min-width: 760px) 40vw, 90vw" width="1280" height="960" loading="lazy" alt="Tráfico en una avenida de una ciudad colombiana de noche">
+        </picture>
+      </div>
+      <div class="step" data-step="1">
+        <p class="section-kicker">El giro</p>
+        <h2>Pero divide por población…</h2>
+        <p>Y el panorama cambia por completo. El mismo mapa, ahora por tasa de homicidios por 100.000 habitantes: Bogotá cae a la mitad de la tabla nacional. El riesgo real está en otro lugar.</p>
+      </div>
+      <div class="step" data-step="2">
+        <p class="section-kicker">Los extremos</p>
+        <h2>Pueblos pequeños, tasas enormes</h2>
+        <p id="extremos-text">Calculando…</p>
+        <ol class="topn-list" id="topn-list" aria-label="Municipios con la tasa más alta"></ol>
+        <p class="step-caveat">¿Qué tienen en común estos municipios? No tenemos una capa de red vial en los datos para confirmarlo — queda como pregunta abierta.</p>
+        <picture class="content-photo" data-slot="escena-pueblo" data-credit="ia">
+          <source type="image/webp" srcset="assets/img/escena-pueblo-640.webp 640w, assets/img/escena-pueblo-1280.webp 1280w" sizes="(min-width: 760px) 40vw, 90vw">
+          <img src="assets/img/escena-pueblo-1280.jpg" srcset="assets/img/escena-pueblo-640.jpg 640w, assets/img/escena-pueblo-1280.jpg 1280w" sizes="(min-width: 760px) 40vw, 90vw" width="1280" height="960" loading="lazy" alt="Carretera nacional atravesando un municipio pequeño de Colombia">
+        </picture>
+      </div>
+    </div>
+  </section>
+
+  <!-- DÓNDE -->
+  <section class="story-section" id="donde">
+    <div class="reveal">
+      <p class="section-kicker">Dónde</p>
+      <h2>Absolutos y per cápita cuentan historias distintas</h2>
+      <div class="compare-cards">
+        <div class="compare-card">
+          <p class="compare-label">Más muertes en números absolutos</p>
+          <p class="compare-city" id="geo-abs-city">—</p>
+          <p class="compare-value"><span id="geo-abs-value">—</span> homicidios</p>
+          <p class="compare-footnote">tasa: <span id="geo-abs-tasa">—</span> por 100.000 hab.</p>
+        </div>
+        <div class="compare-card">
+          <p class="compare-label">Tasa más alta entre ciudades grandes (&gt;500.000 hab.)</p>
+          <p class="compare-city" id="geo-tasa-city">—</p>
+          <p class="compare-value"><span id="geo-tasa-value">—</span> por 100.000 hab.</p>
+          <p class="compare-footnote"><span id="geo-tasa-abs">—</span> homicidios en total</p>
+        </div>
+      </div>
+      <p class="section-text" id="geo-depto-text"></p>
+    </div>
+  </section>
+
+  <!-- corte de capítulo -->
+  <section class="chapter-break">
+    <div class="img-slot img-slot-bg" data-slot="capitulo-corredor" data-credit="ia"></div>
+    <div class="chapter-break-content">
+      <span class="km-badge">KM 05 — EL TIEMPO</span>
+      <p class="chapter-break-text">¿Mejora o empeora año tras año?</p>
+    </div>
+  </section>
+
+  <!-- EL TIEMPO -->
+  <section class="story-section alt" id="tiempo">
+    <div class="reveal">
+      <p class="section-kicker">El tiempo</p>
+      <h2>La cifra no para de subir</h2>
+      <div id="trend-chart"></div>
+      <p class="section-text" id="trend-text"></p>
+    </div>
+  </section>
+
+  <!-- corte de capítulo -->
+  <section class="chapter-break">
+    <div class="img-slot img-slot-bg" data-slot="capitulo-memoria" data-credit="ia"></div>
+    <div class="chapter-break-content">
+      <span class="km-badge">KM 06 — EXPLÓRALO TÚ MISMO</span>
+      <p class="chapter-break-text">Busca tu municipio.</p>
+    </div>
+  </section>
+
+  <!-- EXPLORADOR -->
+  <section class="story-section map-section" id="explorador">
+    <div class="reveal">
+      <h2>El mapa, municipio por municipio</h2>
+      <div class="search-wrap">
+        <input type="text" id="search-input" class="search-input" placeholder="Busca un municipio (ej. Bogotá, Cucuta)…" autocomplete="off" aria-label="Buscar municipio" />
+        <ul id="search-results" class="search-results" role="listbox" hidden></ul>
+      </div>
+    </div>
+
+    <div class="explorer-layout">
+      <div id="explorer-map" role="application" aria-label="Mapa interactivo de municipios de Colombia"></div>
+      <div id="mpio-card" class="mpio-card" hidden></div>
+    </div>
+
+    <div class="controls" id="controls">
+      <div class="year-row">
+        <button type="button" id="year-play" class="year-step" aria-label="Reproducir años">▶</button>
+        <button type="button" id="year-prev" class="year-step" aria-label="Año anterior">‹</button>
+        <div class="year-display"><span id="year-label">—</span></div>
+        <button type="button" id="year-next" class="year-step" aria-label="Año siguiente">›</button>
+      </div>
+      <input type="range" id="year-slider" min="0" max="0" step="1" value="0" aria-label="Seleccionar año" />
+      <div id="legend" class="legend" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- METODOLOGÍA -->
+  <footer class="app-footer">
+    <div class="img-slot img-slot-bg img-slot-subtle" data-slot="textura-asfalto"></div>
+    <details>
+      <summary>Metodología y fuentes de datos</summary>
+      <div id="footer-content">Cargando…</div>
+    </details>
+  </footer>
+
+  <script src="js/charts.js"></script>
+  <script src="js/scrolly.js"></script>
+  <script src="js/map-common.js"></script>
+  <script src="js/scrolly-map.js"></script>
+  <script src="js/explorer-map.js"></script>
+  <script src="js/story.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
