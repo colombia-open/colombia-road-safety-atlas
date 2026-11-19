@@ -211,7 +211,14 @@ def build_story(
     """Cifras para el storytelling (hero, patrones temporales, ranking de
     departamentos). El patron por dia/mes usa TODO el historico del
     dataset (no solo anios_disponibles) porque es un patron de
-    comportamiento, no una tasa per capita atada a un anio de poblacion."""
+    comportamiento, no una tasa per capita atada a un anio de poblacion
+    -- pero SIEMPRE excluyendo el anio en curso (incompleto): un anio a
+    medio terminar sesga el patron (por ejemplo, si faltan meses enteros)
+    y ademas el rango de anios mostrado en el texto no debe incluir un
+    anio que ni siquiera termino."""
+    current_year = datetime.now(timezone.utc).year
+    homicidios = homicidios.filter(pl.col("anio") < current_year)
+
     nacional_por_anio = (
         homicidios.filter(pl.col("anio").is_in(anios_disponibles))
         .group_by("anio")

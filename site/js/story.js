@@ -23,13 +23,21 @@ function renderTrend(story) {
     tooltipExtra: `${fmtConteo(story.total_nacional_por_anio[y])} muertes`,
   }));
 
-  let peakIdx = 0;
+  // El titular compara valores REDONDEADOS a 1 decimal (lo que el
+  // lector realmente ve, fmtTasa) — dos años pueden tener valores
+  // crudos distintos pero mostrar la misma cifra (ej. 2022 y 2023 =
+  // "14,6"); si el titular dijera "el pico fue en 2022, no en 2023"
+  // contradiría lo que el propio gráfico muestra al lado. Se trata
+  // como empate en vez de elegir uno arbitrariamente.
+  const rounded = items.map((it) => Math.round(it.value * 10) / 10);
+  const maxRounded = Math.max(...rounded);
+  const peakIdxs = rounded.reduce((acc, v, i) => (v === maxRounded ? [...acc, i] : acc), []);
+  const peakIdx = peakIdxs[peakIdxs.length - 1];
   let valleyIdx = 0;
   items.forEach((it, i) => {
-    if (it.value > items[peakIdx].value) peakIdx = i;
     if (it.value < items[valleyIdx].value) valleyIdx = i;
   });
-  const highlightIndexes = Array.from(new Set([0, peakIdx, valleyIdx, items.length - 1]));
+  const highlightIndexes = Array.from(new Set([0, ...peakIdxs, valleyIdx, items.length - 1]));
 
   renderBarChart(document.getElementById("trend-chart"), {
     items,
@@ -47,10 +55,18 @@ function renderTrend(story) {
   const pctVsPeak = ((last.value - peak.value) / peak.value) * 100;
 
   const subioVsFirst = pctVsFirst >= 0;
-  const headline =
-    peakIdx === items.length - 1
+  const lastIsPeak = peakIdxs.includes(items.length - 1);
+  const peakYearsLabel = peakIdxs.map((i) => items[i].label).join(" y ");
+  let headline;
+  if (peakIdxs.length > 1) {
+    headline = lastIsPeak
+      ? `${peakYearsLabel} empatan con la tasa más alta de la serie`
+      : `El pico fue en ${peakYearsLabel} (empatados en ${fmtTasa(maxRounded)}), no en ${last.label}`;
+  } else {
+    headline = lastIsPeak
       ? `${last.label} es el año con la tasa más alta de la serie`
       : `El pico fue en ${peak.label}, no en ${last.label}`;
+  }
   document.getElementById("trend-title").textContent = headline;
 
   const deltaFirstClass = subioVsFirst ? "delta-critical" : "delta-good";
@@ -145,22 +161,28 @@ function renderDow(story) {
   const finde = domingo + sabado;
   const [y0, y1] = story.anio_rango_patron_temporal;
 
+  const referenciaParejo = (2 / 7) * 100; // si los 7 días pesaran igual, 2 días = 28,6% del total
   document.getElementById("dow-text").innerHTML =
     `Con el histórico completo (${y0}–${y1}): el domingo concentra ${fmtPct(domingo)} de las muertes y el sábado ${fmtPct(sabado)} — ` +
-    `<span class="delta delta-critical">${fmtPct(finde)} del total</span> cae en fin de semana, que son solo 2 de los 7 días.`;
+    `<span class="delta delta-critical">${fmtPct(finde)} del total</span> cae en fin de semana. Si los 7 días pesaran igual, el fin de ` +
+    `semana (2 de 7 días) tendría ${fmtPct(referenciaParejo)}: la cifra real está bien por encima de esa referencia.`;
 }
 
-// Cierre breve antes del explorador/metodología: solo síntesis de
-// hallazgos ya mostrados arriba, con cifras que ya están en el DOM
-// (no se inventa ningún número nuevo aquí).
+// Cierre breve antes del explorador: solo síntesis de hallazgos ya
+// mostrados arriba, con cifras que ya están en el DOM (no se inventa
+// ningún número nuevo aquí). Cuatro viñetas, no un párrafo — una por
+// cada cosa que el título promete.
 function renderCierre(meta, story) {
   const finde = story.dow_pct.sabado + story.dow_pct.domingo;
-  document.getElementById("cierre-text").innerHTML =
-    `Cuatro cosas quedan claras. Primero: dividir por población cambia el mapa del riesgo — las ciudades grandes concentran más ` +
-    `muertes en números absolutos, pero no tienen las tasas más altas. Segundo: en municipios de menos de ` +
-    `${fmtConteo(meta.poblacion_pequena_umbral)} habitantes la tasa de un solo año es poco confiable — una sola muerte dispara el número — ` +
-    `así que compararlos exige promediar varios años. Y las muertes se cuentan donde ocurre el siniestro, no donde vive la víctima: ` +
-    `un municipio atravesado por una vía nacional puede acumular muertes de personas que solo estaban de paso, no de sus propios habitantes. ` +
-    `Por último, el patrón no es parejo en el tiempo: <span class="delta delta-critical">${fmtPct(finde)}</span> de las muertes históricas ` +
-    `ocurren en fin de semana.`;
+  const puntos = [
+    `Dividir por población cambia el mapa del riesgo: las ciudades grandes concentran más muertes en números absolutos, pero no ` +
+      `tienen las tasas más altas.`,
+    `En municipios de menos de ${fmtConteo(meta.poblacion_pequena_umbral)} habitantes la tasa de un solo año es poco confiable — ` +
+      `una sola muerte dispara el número — así que compararlos exige promediar varios años.`,
+    `Las muertes se cuentan donde ocurre el siniestro, no donde vive la víctima: un municipio atravesado por una vía nacional ` +
+      `puede acumular muertes de personas que solo estaban de paso, no de sus propios habitantes.`,
+    `El patrón no es parejo en el tiempo: <span class="delta delta-critical">${fmtPct(finde)}</span> de las muertes históricas ` +
+      `ocurren en fin de semana.`,
+  ];
+  document.getElementById("cierre-text").innerHTML = puntos.map((p) => `<li>${p}</li>`).join("");
 }

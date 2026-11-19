@@ -123,7 +123,7 @@ function initMapFeatures(meta, story) {
         `${fmtConteo(meta.poblacion_pequena_umbral)}+ habitantes`;
       document.getElementById("extremos-text").textContent =
         `${scrolly.topN[0].nombre_mpio}, ${scrolly.topN[0].nombre_dpto}: ${fmtTasa(scrolly.topN[0].tasa)} muertes por 100.000 hab. ` +
-        `(promedio de los últimos 3 años) — la tasa más alta del país entre municipios que no son pequeños. Son pueblos, lejos de los titulares.`;
+        `(promedio de los últimos 3 años) — la tasa más alta del país entre municipios que no son pequeños.`;
       document.getElementById("extremos-umbral-note").textContent =
         `Se excluyen municipios con menos de ${fmtConteo(meta.poblacion_pequena_umbral)} hab.: con tan pocos casos, la tasa ` +
         `de un solo año puede duplicarse o caer a la mitad de un año a otro — no es comparable. Por eso este ranking usa el ` +
