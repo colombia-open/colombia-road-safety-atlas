@@ -14,10 +14,13 @@ function initScrollyMap(containerEl, { geojson, porMunicipio, anioFoco, breaks, 
 
   const map = new maplibregl.Map({
     container: containerEl,
-    // Sin basemap de terceros (ver choropleth-atlas skill): solo
-    // "glyphs" apunta a un servicio público de fuentes (texto, no
-    // tiles/imagen) para poder dibujar los 3 rótulos de ciudad.
-    style: { version: 8, sources: {}, layers: [], glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf" },
+    // Sin basemap de terceros (ver choropleth-atlas skill) y sin
+    // "glyphs" tampoco: los rótulos de ciudad no se dibujan con una
+    // capa symbol de MapLibre (que necesitaría un servidor de fuentes
+    // vectoriales — antes apuntaba al servidor de demostración de
+    // demotiles.maplibre.org, no apto para producción), sino con divs
+    // HTML posicionados por encima del mapa (ver createCityLabels).
+    style: { version: 8, sources: {}, layers: [] },
     center: [-74.3, 4.6],
     zoom: 4.6,
     interactive: false, // narrativo: el scroll manda, no el gesto del mapa
@@ -133,32 +136,15 @@ function initScrollyMap(containerEl, { geojson, porMunicipio, anioFoco, breaks, 
 
     // Rótulos fijos de las 3 ciudades más grandes (paso "El panorama
     // parece claro"): sin esto no se puede identificar ninguna ciudad
-    // en el mapa de burbujas.
+    // en el mapa de burbujas. Divs HTML, no una capa symbol (ver nota
+    // de "glyphs" en el init del mapa).
     const propsByMpio = {};
     for (const f of geojson.features) propsByMpio[f.properties.cod_mpio] = f.properties;
-    const ciudadesFeatures = CIUDADES_ETIQUETADAS.filter((cm) => propsByMpio[cm]).map((cm) => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [propsByMpio[cm].longitud, propsByMpio[cm].latitud] },
-      properties: { nombre_mpio: propsByMpio[cm].nombre_mpio },
+    const ciudadesCoords = CIUDADES_ETIQUETADAS.filter((cm) => propsByMpio[cm]).map((cm) => ({
+      nombre_mpio: propsByMpio[cm].nombre_mpio,
+      lngLat: [propsByMpio[cm].longitud, propsByMpio[cm].latitud],
     }));
-    map.addSource("ciudades-grandes", { type: "geojson", data: { type: "FeatureCollection", features: ciudadesFeatures } });
-    map.addLayer({
-      id: "ciudades-grandes-label",
-      type: "symbol",
-      source: "ciudades-grandes",
-      layout: {
-        "text-field": ["get", "nombre_mpio"],
-        "text-font": ["Noto Sans Regular"],
-        "text-size": 13,
-        "text-offset": [0, 1.3],
-        "text-anchor": "top",
-      },
-      paint: {
-        "text-color": "#f3efe6",
-        "text-halo-color": "#15181c",
-        "text-halo-width": 1.4,
-      },
-    });
+    createCityLabels(map, containerEl, ciudadesCoords);
 
     applyYearFeatureState(map, "municipios", porMunicipio, String(anioFoco));
     applyYearFeatureState(map, "centroides", porMunicipio, String(anioFoco));
@@ -166,8 +152,40 @@ function initScrollyMap(containerEl, { geojson, porMunicipio, anioFoco, breaks, 
     if (legendEl) renderLegendMapa(legendEl, breaks);
 
     containerEl.dataset.ready = "true";
-    if (containerEl._pendingStep !== undefined) goToStep(containerEl._pendingStep);
+    // Siempre deja el mapa en un estado explícito al terminar de cargar
+    // (el paso 0 si nadie ha scrolleado todavía) — antes, si no había
+    // ningún _pendingStep guardado, no se llamaba goToStep y el panel
+    // dependía de que el paint inicial de cada capa "coincidiera por
+    // casualidad" con el estado del paso 0, sin garantía ninguna.
+    goToStep(containerEl._pendingStep !== undefined ? containerEl._pendingStep : 0);
+    containerEl._pendingStep = undefined;
   });
+
+  // Rótulos de ciudad como overlay HTML posicionado con map.project():
+  // evita depender de un servidor de glyphs (vector-tile fonts) para
+  // dibujar 3 nombres fijos, que es lo único que MapLibre necesitaba
+  // los glyphs para. El halo es un chip de fondo oscuro (ver CSS), más
+  // legible que un contorno de texto delgado sobre una burbuja ámbar.
+  function createCityLabels(map, container, cities) {
+    const labels = cities.map(({ nombre_mpio, lngLat }) => {
+      const el = document.createElement("div");
+      el.className = "map-city-label";
+      el.textContent = nombre_mpio;
+      el.setAttribute("aria-hidden", "true");
+      container.appendChild(el);
+      return { el, lngLat };
+    });
+    function update() {
+      for (const { el, lngLat } of labels) {
+        const p = map.project(lngLat);
+        el.style.left = `${p.x}px`;
+        el.style.top = `${p.y + 14}px`; // debajo del punto, fuera del radio típico de una burbuja
+      }
+    }
+    map.on("move", update);
+    map.on("resize", update);
+    update();
+  }
 
   // Cada paso fija TODO su estado (no solo lo que cambia respecto al
   // anterior): si el usuario scrollea rápido y salta un paso de por
@@ -176,8 +194,8 @@ function initScrollyMap(containerEl, { geojson, porMunicipio, anioFoco, breaks, 
     if (!map.isStyleLoaded() || !map.getLayer("bubbles")) {
       // No solo se guarda para el chequeo único tras "load": el estilo
       // puede quedar "no listo" otra vez más tarde (p.ej. mientras
-      // carga el glyph del rótulo de ciudades), y si un paso llega justo
-      // en esa ventana se perdía para siempre. "idle" reintenta.
+      // recarga alguna fuente), y si un paso llega justo en esa ventana
+      // se perdía para siempre. "idle" reintenta.
       containerEl._pendingStep = index;
       map.once("idle", () => {
         if (containerEl._pendingStep !== undefined) {
